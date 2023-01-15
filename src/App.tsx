@@ -1,31 +1,16 @@
 /** @jsxImportSource @emotion/react */
-import { useEffect, useState } from 'react';
-import './App.css';
-import * as classNames from './style';
+import { useTheme } from '@emotion/react';
+import { Header, Playground } from './components';
+import { ColorsType } from './contexts/theme-context';
+import * as classNames from './styles';
 
 function App() {
-	const [first, setFirst] = useState(false);
-
-	useEffect(() => {
-		console.log('on initial mount', first);
-		setFirst(true);
-	}, []);
+	const theme = useTheme();
 
 	return (
-		<div className="App">
-			<header className="App-header">
-				<p css={classNames.paraContainer}>
-					Edit <code>src/App.tsx</code> and save to reload.
-				</p>
-				<a
-					className="App-link"
-					href="https://reactjs.org"
-					target="_blank"
-					rel="noopener noreferrer"
-				>
-					Learn React
-				</a>
-			</header>
+		<div css={classNames.app(theme as ColorsType)}>
+			<Header />
+			<Playground />
 		</div>
 	);
 }
