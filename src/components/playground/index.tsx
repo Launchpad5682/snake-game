@@ -11,7 +11,7 @@ import * as classNames from './style';
 function Playground() {
 	const theme = useTheme() as ColorsType;
 	const { grid, keyPressHandler } = useDataContext() as DataContextInterface;
-	console.log(grid);
+
 	return (
 		// eslint-disable-next-line jsx-a11y/no-static-element-interactions
 		<div

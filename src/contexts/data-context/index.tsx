@@ -21,6 +21,7 @@ type SnakePosition = {
 	y: number;
 	direction: DirectionType;
 };
+type Snake = Array<SnakePosition>;
 
 export interface DataContextInterface {
 	direction: DirectionType;
@@ -54,7 +55,7 @@ function updateGridWithSnake(grid: GridType, snake: Array<SnakePosition>) {
 	for (let i = 0; i < rows; i++) {
 		const row = [];
 		for (let j = 0; j < columns; j++) {
-			const { x, y, snakeCell, foodCell } = grid[i][j];
+			const { x, y, foodCell } = grid[i][j];
 			row.push({
 				x,
 				y,
@@ -68,26 +69,50 @@ function updateGridWithSnake(grid: GridType, snake: Array<SnakePosition>) {
 	const snakeLenght = snake.length;
 	for (let i = 0; i < snakeLenght; i++) {
 		const { x, y } = snake[i];
-		updatedGrid[x][y].snakeCell = true;
+		updatedGrid[y][x].snakeCell = true;
 	}
 
 	return updatedGrid;
 }
 
-function updateSnake() {}
+function updateSnake(direction: DirectionType, snake: Snake): Snake {
+	const updatedSnake: Snake = [...snake];
+	const snakeLenght = snake.length;
+
+	if (direction === 'up') {
+		updatedSnake[0].y--;
+	} else if (direction === 'down') {
+		updatedSnake[0].y++;
+	} else if (direction === 'left') {
+		updatedSnake[0].x--;
+	} else if (direction === 'right') {
+		updatedSnake[0].x++;
+	}
+
+	for (let i = 0; i < snakeLenght; i++) {
+		// current box
+		// next box
+	}
+
+	return updatedSnake;
+}
 
 export function DataProvider({
 	children,
 }: {
 	children: ReactElement | ReactNode;
 }) {
-	const [direction, setDirection] = useState<DirectionType>('up');
-	const [snake, setSnake] = useState<Array<SnakePosition>>([
-		{ x: 12, y: 10, direction: 'right' },
-		{ x: 13, y: 10, direction: 'right' },
-		{ x: 14, y: 10, direction: 'right' },
-		{ x: 15, y: 10, direction: 'right' },
-		{ x: 16, y: 10, direction: 'right' },
+	const [pauseGame, setPauseGame] = useState<boolean>(true);
+	const [direction, setDirection] = useState<DirectionType>('left');
+	const [intervalID, setIntervalID] = useState<
+		string | number | NodeJS.Timeout | null
+	>(null);
+	const [snake, setSnake] = useState<Snake>([
+		{ x: 12, y: 10, direction: 'left' },
+		{ x: 13, y: 10, direction: 'left' },
+		{ x: 14, y: 10, direction: 'left' },
+		{ x: 15, y: 10, direction: 'left' },
+		{ x: 16, y: 10, direction: 'left' },
 	]);
 	const [grid, setGrid] = useState<GridType>(generateGridData(20, 30));
 
@@ -96,15 +121,44 @@ export function DataProvider({
 	}, []);
 
 	useEffect(() => {
-		const intervalID = setInterval(() => {}, 300);
+		if ((pauseGame && intervalID) || (!pauseGame && direction && intervalID)) {
+			clearInterval(intervalID);
+			setIntervalID(null);
+		}
 
-		return () => clearInterval(intervalID);
-	}, []);
+		if (!pauseGame && direction) {
+			setIntervalID(
+				setInterval(() => {
+					const updSnake = updateSnake(direction, snake);
+					const updatedGrid = updateGridWithSnake(grid, snake);
+					setSnake(updSnake);
+					setGrid(updatedGrid);
+				}, 300),
+			);
+		}
+
+		return () => {
+			if (intervalID) {
+				clearInterval(intervalID);
+				setIntervalID(null);
+			}
+		};
+	}, [direction, pauseGame]);
 
 	const keyPressHandler = (event: React.KeyboardEvent<HTMLDivElement>) => {
-		console.log(event.code);
 		const { code } = event;
-		// ArrowLeft, ArrowRight, ArrowUp, ArrowDown, Space
+
+		if (code === 'ArrowLeft') {
+			setDirection('left');
+		} else if (code === 'ArrowRight') {
+			setDirection('right');
+		} else if (code === 'ArrowUp') {
+			setDirection('up');
+		} else if (code === 'ArrowDown') {
+			setDirection('down');
+		} else if (code === 'Space') {
+			setPauseGame((prev) => !prev);
+		}
 	};
 
 	// eslint-disable-next-line react/jsx-no-constructed-context-values
