@@ -1,9 +1,7 @@
 /** @jsxImportSource @emotion/react */
 import { useTheme } from '@emotion/react';
-import {
-	DataContextInterface,
-	useDataContext,
-} from '../../contexts/data-context';
+import { useDataContext } from '../../contexts/data-context';
+import { DataContextInterface } from '../../contexts/data-context/types';
 import { ColorsType } from '../../contexts/theme-context';
 import { GridElement } from '../atoms/grid-element';
 import * as classNames from './style';

@@ -12,5 +12,9 @@ export function GridElement({
 }) {
 	const theme = useTheme() as ColorsType;
 
-	return <div css={classNames.gridElement(theme, snakeCell)} />;
+	return (
+		<div css={classNames.gridElement(theme, snakeCell)}>
+			{foodCell ? '🍔' : ''}
+		</div>
+	);
 }
