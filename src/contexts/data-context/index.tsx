@@ -7,27 +7,21 @@ import {
 	useEffect,
 	useState,
 } from 'react';
+// helpers
+import { placeFood } from '../../helper/index';
 
-type DirectionType = 'up' | 'down' | 'left' | 'right';
-type CellType = {
-	x: number;
-	y: number;
-	snakeCell: boolean;
-	foodCell: boolean;
-};
-type GridType = Array<Array<CellType>>;
-type SnakePosition = {
-	x: number;
-	y: number;
-	direction: DirectionType;
-};
-type Snake = Array<SnakePosition>;
+// data
+import { initialSnakeValue } from './data';
 
-export interface DataContextInterface {
-	direction: DirectionType;
-	grid: GridType;
-	keyPressHandler: () => any;
-}
+// types
+import {
+	DirectionType,
+	GridType,
+	Position,
+	SnakePosition,
+	Snake,
+	DataContextInterface,
+} from './types/index';
 
 const DataContext = createContext<DataContextInterface | null>(null);
 export const useDataContext = () => useContext(DataContext);
@@ -38,7 +32,13 @@ function generateGridData(rows: number, columns: number): GridType {
 	for (let i = 0; i < rows; i++) {
 		const row = [];
 		for (let j = 0; j < columns; j++) {
-			row.push({ x: j, y: i, snakeCell: false, foodCell: false });
+			row.push({
+				x: j,
+				y: i,
+				snakeCell: false,
+				foodCell: false,
+				snakeHead: false,
+			});
 		}
 
 		grid.push(row);
@@ -47,7 +47,11 @@ function generateGridData(rows: number, columns: number): GridType {
 	return grid;
 }
 
-function updateGridWithSnake(grid: GridType, snake: Array<SnakePosition>) {
+function updateGridWithSnakeAndFood(
+	grid: GridType,
+	snake: Array<SnakePosition>,
+	food: Position | null,
+) {
 	const updatedGrid = [];
 	const rows = grid.length;
 	const columns = grid[0].length;
@@ -55,12 +59,13 @@ function updateGridWithSnake(grid: GridType, snake: Array<SnakePosition>) {
 	for (let i = 0; i < rows; i++) {
 		const row = [];
 		for (let j = 0; j < columns; j++) {
-			const { x, y, foodCell } = grid[i][j];
+			const { x, y, snakeHead } = grid[i][j];
 			row.push({
 				x,
 				y,
 				snakeCell: false,
-				foodCell,
+				foodCell: !!(food && food.x === x && food.y === y),
+				snakeHead,
 			});
 		}
 
@@ -133,17 +138,6 @@ function updateSnake(
 
 	return updatedSnake;
 }
-const initialSnakeValue: Snake = [
-	{ x: 12, y: 10, direction: 'left' },
-	{ x: 13, y: 10, direction: 'left' },
-	{ x: 14, y: 10, direction: 'left' },
-	{ x: 15, y: 10, direction: 'left' },
-	{ x: 16, y: 10, direction: 'left' },
-	{ x: 17, y: 10, direction: 'left' },
-	{ x: 18, y: 10, direction: 'left' },
-	{ x: 19, y: 10, direction: 'left' },
-	{ x: 20, y: 10, direction: 'left' },
-];
 
 export function DataProvider({
 	children,
@@ -152,16 +146,26 @@ export function DataProvider({
 }) {
 	const [pauseGame, setPauseGame] = useState<boolean>(true);
 	const [direction, setDirection] = useState<DirectionType>('left');
+	const [foodPosition, setFoodPosition] = useState<Position | null>(null);
 	const [intervalID, setIntervalID] = useState<
+		string | number | NodeJS.Timeout | null
+	>(null);
+	const [foodTimeID, setFoodTimerID] = useState<
 		string | number | NodeJS.Timeout | null
 	>(null);
 	const [snake, setSnake] = useState<Snake>(initialSnakeValue);
 	const [grid, setGrid] = useState<GridType>(generateGridData(20, 30));
+	const [score, setScore] = useState<number>(0);
 
 	const endGame = () => {
 		setPauseGame(true);
-		// setSnake(initialSnakeValue);
+		setSnake(initialSnakeValue);
 		setDirection('left');
+	};
+
+	const eatFood = () => {
+		setScore((prev) => prev + 1);
+		setFoodPosition(null);
 	};
 
 	useEffect(() => {
@@ -188,8 +192,33 @@ export function DataProvider({
 	}, [direction, pauseGame]);
 
 	useEffect(() => {
-		setGrid((prevGrid) => updateGridWithSnake(prevGrid, snake));
-	}, [snake]);
+		setGrid((prevGrid) =>
+			updateGridWithSnakeAndFood(prevGrid, snake, foodPosition),
+		);
+	}, [snake, foodPosition]);
+
+	// food placement and updates
+	useEffect(() => {
+		// update food after 50 seconds of not eating food
+		if (foodPosition && !foodTimeID) {
+			setFoodTimerID(
+				setTimeout(() => setFoodPosition(() => placeFood(grid)), 50000),
+			);
+		}
+
+		// no food available, place food
+		if (!foodPosition) {
+			setFoodPosition(() => placeFood(grid));
+			setFoodTimerID(null);
+		}
+
+		return () => {
+			if (foodTimeID) {
+				clearTimeout(foodTimeID);
+				setFoodTimerID(null);
+			}
+		};
+	}, [foodPosition, foodTimeID, grid]);
 
 	const keyPressHandler = (event: React.KeyboardEvent<HTMLDivElement>) => {
 		const { code } = event;
@@ -208,7 +237,12 @@ export function DataProvider({
 	};
 
 	// eslint-disable-next-line react/jsx-no-constructed-context-values
-	const value = { direction, grid, keyPressHandler } as DataContextInterface;
+	const value = {
+		direction,
+		grid,
+		keyPressHandler,
+		score,
+	} as DataContextInterface;
 
 	return <DataContext.Provider value={value}>{children}</DataContext.Provider>;
 }
