@@ -84,6 +84,8 @@ function updateSnake(
 	direction: DirectionType,
 	snake: Snake,
 	endGame: () => void,
+	eatFood: () => void,
+	foodPosition: Position | null,
 ): Snake {
 	const updatedSnake: Snake = snake.map((value) => ({ ...value }));
 	const snakeLenght = snake.length;
@@ -122,6 +124,13 @@ function updateSnake(
 		updatedSnake[0].direction = 'right';
 	}
 
+	if (
+		foodPosition &&
+		updatedSnake[0].x === foodPosition.x &&
+		updatedSnake[0].y === foodPosition.y
+	) {
+		eatFood();
+	}
 	for (let i = 1; i < snakeLenght; i++) {
 		// self-bite/intersection
 		if (
@@ -177,7 +186,9 @@ export function DataProvider({
 		if (!pauseGame && direction) {
 			setIntervalID(
 				setInterval(() => {
-					setSnake((prev: Snake) => updateSnake(direction, prev, endGame));
+					setSnake((prev: Snake) =>
+						updateSnake(direction, prev, endGame, eatFood, foodPosition),
+					);
 				}, 300),
 			);
 		}
