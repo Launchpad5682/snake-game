@@ -76,22 +76,27 @@ function updateGridWithSnake(grid: GridType, snake: Array<SnakePosition>) {
 }
 
 function updateSnake(direction: DirectionType, snake: Snake): Snake {
-	const updatedSnake: Snake = [...snake];
+	const updatedSnake: Snake = snake.map((value) => ({ ...value }));
 	const snakeLenght = snake.length;
 
 	if (direction === 'up') {
 		updatedSnake[0].y--;
+		updatedSnake[0].direction = 'up';
 	} else if (direction === 'down') {
 		updatedSnake[0].y++;
+		updatedSnake[0].direction = 'down';
 	} else if (direction === 'left') {
 		updatedSnake[0].x--;
+		updatedSnake[0].direction = 'left';
 	} else if (direction === 'right') {
 		updatedSnake[0].x++;
+		updatedSnake[0].direction = 'right';
 	}
 
-	for (let i = 0; i < snakeLenght; i++) {
-		// current box
-		// next box
+	for (let i = 1; i < snakeLenght; i++) {
+		updatedSnake[i].x = snake[i - 1].x;
+		updatedSnake[i].y = snake[i - 1].y;
+		updatedSnake[i].direction = snake[i - 1].direction;
 	}
 
 	return updatedSnake;
@@ -117,10 +122,6 @@ export function DataProvider({
 	const [grid, setGrid] = useState<GridType>(generateGridData(20, 30));
 
 	useEffect(() => {
-		setGrid(() => updateGridWithSnake(grid, snake));
-	}, []);
-
-	useEffect(() => {
 		if ((pauseGame && intervalID) || (!pauseGame && direction && intervalID)) {
 			clearInterval(intervalID);
 			setIntervalID(null);
@@ -129,10 +130,7 @@ export function DataProvider({
 		if (!pauseGame && direction) {
 			setIntervalID(
 				setInterval(() => {
-					const updSnake = updateSnake(direction, snake);
-					const updatedGrid = updateGridWithSnake(grid, snake);
-					setSnake(updSnake);
-					setGrid(updatedGrid);
+					setSnake((prev: Snake) => updateSnake(direction, prev));
 				}, 300),
 			);
 		}
@@ -143,7 +141,12 @@ export function DataProvider({
 				setIntervalID(null);
 			}
 		};
+		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [direction, pauseGame]);
+
+	useEffect(() => {
+		setGrid((prevGrid) => updateGridWithSnake(prevGrid, snake));
+	}, [snake]);
 
 	const keyPressHandler = (event: React.KeyboardEvent<HTMLDivElement>) => {
 		const { code } = event;
