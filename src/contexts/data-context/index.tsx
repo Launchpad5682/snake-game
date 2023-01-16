@@ -124,13 +124,6 @@ function updateSnake(
 		updatedSnake[0].direction = 'right';
 	}
 
-	if (
-		foodPosition &&
-		updatedSnake[0].x === foodPosition.x &&
-		updatedSnake[0].y === foodPosition.y
-	) {
-		eatFood();
-	}
 	for (let i = 1; i < snakeLenght; i++) {
 		// self-bite/intersection
 		if (
@@ -143,6 +136,28 @@ function updateSnake(
 		updatedSnake[i].x = snake[i - 1].x;
 		updatedSnake[i].y = snake[i - 1].y;
 		updatedSnake[i].direction = snake[i - 1].direction;
+	}
+
+	if (
+		foodPosition &&
+		updatedSnake[0].x === foodPosition.x &&
+		updatedSnake[0].y === foodPosition.y
+	) {
+		eatFood();
+		const {
+			x,
+			y,
+			direction: snakeCellDirection,
+		} = updatedSnake[snakeLenght - 1];
+		if (snakeCellDirection === 'left') {
+			updatedSnake.push({ x: x + 1, y, direction: snakeCellDirection });
+		} else if (snakeCellDirection === 'right') {
+			updatedSnake.push({ x: x - 1, y, direction: snakeCellDirection });
+		} else if (snakeCellDirection === 'up') {
+			updatedSnake.push({ x, y: y + 1, direction: snakeCellDirection });
+		} else {
+			updatedSnake.push({ x, y: y - 1, direction: snakeCellDirection });
+		}
 	}
 
 	return updatedSnake;
