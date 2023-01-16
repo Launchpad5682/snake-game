@@ -118,6 +118,14 @@ function updateSnake(
 	}
 
 	for (let i = 1; i < snakeLenght; i++) {
+		// self-bite/intersection
+		if (
+			updatedSnake[i].x === updatedSnake[0].x &&
+			updatedSnake[i].y === updatedSnake[0].y
+		) {
+			endGame();
+			return snake;
+		}
 		updatedSnake[i].x = snake[i - 1].x;
 		updatedSnake[i].y = snake[i - 1].y;
 		updatedSnake[i].direction = snake[i - 1].direction;
@@ -152,7 +160,7 @@ export function DataProvider({
 
 	const endGame = () => {
 		setPauseGame(true);
-		setSnake(initialSnakeValue);
+		// setSnake(initialSnakeValue);
 		setDirection('left');
 	};
 
