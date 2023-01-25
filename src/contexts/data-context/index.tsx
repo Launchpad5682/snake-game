@@ -8,7 +8,12 @@ import {
 	useState,
 } from 'react';
 // helpers
-import { placeFood } from '../../helper/index';
+import {
+	generateGridData,
+	placeFood,
+	updateGridWithSnakeAndFood,
+	updateSnake,
+} from '../../helper/index';
 
 // data
 import { initialSnakeValue } from './data';
@@ -18,153 +23,12 @@ import {
 	DirectionType,
 	GridType,
 	Position,
-	SnakePosition,
 	Snake,
 	DataContextInterface,
 } from './types/index';
 
 const DataContext = createContext<DataContextInterface | null>(null);
 export const useDataContext = () => useContext(DataContext);
-
-function generateGridData(rows: number, columns: number): GridType {
-	const grid = [];
-
-	for (let i = 0; i < rows; i++) {
-		const row = [];
-		for (let j = 0; j < columns; j++) {
-			row.push({
-				x: j,
-				y: i,
-				snakeCell: false,
-				foodCell: false,
-				snakeHead: false,
-			});
-		}
-
-		grid.push(row);
-	}
-
-	return grid;
-}
-
-function updateGridWithSnakeAndFood(
-	grid: GridType,
-	snake: Array<SnakePosition>,
-	food: Position | null,
-) {
-	const updatedGrid = [];
-	const rows = grid.length;
-	const columns = grid[0].length;
-
-	for (let i = 0; i < rows; i++) {
-		const row = [];
-		for (let j = 0; j < columns; j++) {
-			const { x, y } = grid[i][j];
-			row.push({
-				x,
-				y,
-				snakeCell: false,
-				foodCell: !!(food && food.x === x && food.y === y),
-				snakeHead: false,
-			});
-		}
-
-		updatedGrid.push(row);
-	}
-	const snakeLenght = snake.length;
-	for (let i = 0; i < snakeLenght; i++) {
-		const { x, y } = snake[i];
-		updatedGrid[y][x].snakeCell = true;
-		if (i === 0) {
-			updatedGrid[y][x].snakeHead = true;
-		}
-	}
-
-	return updatedGrid;
-}
-
-function updateSnake(
-	direction: DirectionType,
-	snake: Snake,
-	endGame: () => void,
-	eatFood: () => void,
-	foodPosition: Position | null,
-): Snake {
-	const updatedSnake: Snake = snake.map((value) => ({ ...value }));
-	const snakeLenght = snake.length;
-
-	if (direction === 'up') {
-		// top boundary hit case
-		if (updatedSnake[0].y - 1 < 0) {
-			endGame();
-			return snake;
-		}
-		updatedSnake[0].y--;
-		updatedSnake[0].direction = 'up';
-	} else if (direction === 'down') {
-		// bottom boundary hit case
-		if (updatedSnake[0].y + 1 > 19) {
-			endGame();
-			return snake;
-		}
-		updatedSnake[0].y++;
-		updatedSnake[0].direction = 'down';
-	} else if (direction === 'left') {
-		// left boundary hit case
-		if (updatedSnake[0].x - 1 < 0) {
-			endGame();
-			return snake;
-		}
-		updatedSnake[0].x--;
-		updatedSnake[0].direction = 'left';
-	} else if (direction === 'right') {
-		// right boundary hit case
-		if (updatedSnake[0].x + 1 > 29) {
-			endGame();
-			return snake;
-		}
-		updatedSnake[0].x++;
-		updatedSnake[0].direction = 'right';
-	}
-
-	for (let i = 1; i < snakeLenght; i++) {
-		// self-bite/intersection
-		if (
-			updatedSnake[i].x === updatedSnake[0].x &&
-			updatedSnake[i].y === updatedSnake[0].y
-		) {
-			endGame();
-			return snake;
-		}
-		updatedSnake[i].x = snake[i - 1].x;
-		updatedSnake[i].y = snake[i - 1].y;
-		updatedSnake[i].direction = snake[i - 1].direction;
-	}
-
-	if (
-		foodPosition &&
-		updatedSnake[0].x === foodPosition.x &&
-		updatedSnake[0].y === foodPosition.y
-	) {
-		eatFood();
-		const {
-			x,
-			y,
-			direction: snakeCellDirection,
-		} = updatedSnake[snakeLenght - 1];
-		if (snakeCellDirection === 'left') {
-			updatedSnake.push({ x: x + 1, y, direction: snakeCellDirection });
-		} else if (snakeCellDirection === 'right') {
-			updatedSnake.push({ x: x - 1, y, direction: snakeCellDirection });
-		} else if (snakeCellDirection === 'up') {
-			updatedSnake.push({ x, y: y + 1, direction: snakeCellDirection });
-		} else {
-			updatedSnake.push({ x, y: y - 1, direction: snakeCellDirection });
-		}
-	}
-
-	return updatedSnake;
-}
 
 export function DataProvider({
 	children,
