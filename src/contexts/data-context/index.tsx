@@ -59,13 +59,13 @@ function updateGridWithSnakeAndFood(
 	for (let i = 0; i < rows; i++) {
 		const row = [];
 		for (let j = 0; j < columns; j++) {
-			const { x, y, snakeHead } = grid[i][j];
+			const { x, y } = grid[i][j];
 			row.push({
 				x,
 				y,
 				snakeCell: false,
 				foodCell: !!(food && food.x === x && food.y === y),
-				snakeHead,
+				snakeHead: false,
 			});
 		}
 
@@ -75,6 +75,9 @@ function updateGridWithSnakeAndFood(
 	for (let i = 0; i < snakeLenght; i++) {
 		const { x, y } = snake[i];
 		updatedGrid[y][x].snakeCell = true;
+		if (i === 0) {
+			updatedGrid[y][x].snakeHead = true;
+		}
 	}
 
 	return updatedGrid;
@@ -180,11 +183,26 @@ export function DataProvider({
 	const [snake, setSnake] = useState<Snake>(initialSnakeValue);
 	const [grid, setGrid] = useState<GridType>(generateGridData(20, 30));
 	const [score, setScore] = useState<number>(0);
+	const [end, setEnd] = useState(false);
+	// eslint-disable-next-line @typescript-eslint/no-unused-vars
+	const [bestScore, setBestScore] = useState(
+		() =>
+			JSON.parse(localStorage.getItem('nokia-snake-score') as string)
+				?.bestScore || 0,
+	);
 
 	const endGame = () => {
+		setEnd(true);
 		setPauseGame(true);
-		setSnake(initialSnakeValue);
 		setDirection('left');
+	};
+
+	const restartGame = () => {
+		setEnd(false);
+		setDirection('left');
+		setFoodPosition(null);
+		setSnake(initialSnakeValue);
+		setScore(0);
 	};
 
 	const eatFood = () => {
@@ -246,19 +264,31 @@ export function DataProvider({
 		};
 	}, [foodPosition, foodTimeID, grid]);
 
-	const keyPressHandler = (event: React.KeyboardEvent<HTMLDivElement>) => {
-		const { code } = event;
+	useEffect(() => {
+		if (score > bestScore && end) {
+			setBestScore(score);
+			localStorage.setItem(
+				'nokia-snake-score',
+				JSON.stringify({ bestScore: score }),
+			);
+		}
+	}, [bestScore, end, score]);
 
-		if (code === 'ArrowLeft' && direction !== 'right') {
-			setDirection('left');
-		} else if (code === 'ArrowRight' && direction !== 'left') {
-			setDirection('right');
-		} else if (code === 'ArrowUp' && direction !== 'down') {
-			setDirection('up');
-		} else if (code === 'ArrowDown' && direction !== 'up') {
-			setDirection('down');
-		} else if (code === 'Space') {
-			setPauseGame((prev) => !prev);
+	const keyPressHandler = (event: React.KeyboardEvent<HTMLDivElement>) => {
+		if (!end) {
+			const { code } = event;
+
+			if (code === 'ArrowLeft' && direction !== 'right') {
+				setDirection('left');
+			} else if (code === 'ArrowRight' && direction !== 'left') {
+				setDirection('right');
+			} else if (code === 'ArrowUp' && direction !== 'down') {
+				setDirection('up');
+			} else if (code === 'ArrowDown' && direction !== 'up') {
+				setDirection('down');
+			} else if (code === 'Space') {
+				setPauseGame((prev) => !prev);
+			}
 		}
 	};
 
@@ -268,6 +298,9 @@ export function DataProvider({
 		grid,
 		keyPressHandler,
 		score,
+		bestScore,
+		restartGame,
+		end,
 	} as DataContextInterface;
 
 	return <DataContext.Provider value={value}>{children}</DataContext.Provider>;
