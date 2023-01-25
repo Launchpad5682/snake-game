@@ -15,7 +15,5 @@
 - Display current and best score.(need `localStorage` to store the best score)
 - Collides with walls, ends the game and show play again window.
 
-### 💡 - Polishing Project
-- Having meta tags for link previews.💡
 
 
