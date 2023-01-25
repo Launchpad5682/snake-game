@@ -20,6 +20,9 @@ export interface DataContextInterface {
 	grid: GridType;
 	keyPressHandler: () => any;
 	score: number;
+	bestScore: number;
+	restartGame: () => any;
+	end: boolean;
 }
 
 export type {
